@@ -4,22 +4,43 @@ import jssc.SerialPort;
 import jssc.SerialPortException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 import ru.smart.smartHouse.component.ArduinoSerialPortSingleton;
+import ru.smart.smartHouse.entity.Arduino;
+import ru.smart.smartHouse.service.ArduinoService;
 
 
 @Controller
-@RequestMapping("arduino")
+@RequestMapping("/arduino")
 public class ArduinoController {
 
     @Autowired
     private static SerialPort serialPort;
+    @Autowired
+    private ArduinoService arduinoService;
 
-    public ArduinoController(SerialPort serialPort) {
-        this.serialPort = serialPort;
+    @RequestMapping(value = "/edit/{id}", method = RequestMethod.GET)
+    public ModelAndView set(@PathVariable("id") Arduino arduino) {
+        return new ModelAndView("/arduino/edit")
+                .addObject("arduino", arduino);
+    }
+
+    @RequestMapping(value = "/update", method = RequestMethod.POST)
+    public String update(@Validated @ModelAttribute("arduino") Arduino arduino, BindingResult result) {
+        if(result.hasErrors()) {
+            return "/arduino/edit";
+        }
+
+        arduinoService.save(arduino);
+        return "/arduino/list";
+    }
+
+    @RequestMapping(value = "", method = RequestMethod.GET)
+    public String list() {
+        return "/arduino/list";
     }
 
     @RequestMapping(value = "/cmd/write/{id}",method = RequestMethod.GET)
