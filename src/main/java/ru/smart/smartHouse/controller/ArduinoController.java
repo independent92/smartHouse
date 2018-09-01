@@ -35,11 +35,11 @@ public class ArduinoController {
         return "ARDUINO CMD №"+num;
     }
 
-    @RequestMapping(value = "/cmd/read/{pin_id}",method = RequestMethod.GET)
+    @RequestMapping(value = "/cmd/read/{cmd}",method = RequestMethod.GET)
     @ResponseBody
-    public String read(@PathVariable("pin_id") int pin_id){
+    public String read(@PathVariable("cmd") int cmd){
         //byte bs[] = new byte[7];
-        if (pin_id == 9) {
+        if (cmd == 9) {
             try {
                 serialPort.writeInt(183);
                 new Thread().sleep(100);
@@ -51,7 +51,7 @@ public class ArduinoController {
                 e.printStackTrace();
             }
             return "ARDUINO SERVO ANGLE="+ArduinoSerialPortSingleton.getAngle();
-        }else if(pin_id == 8){
+        }else if(cmd == 8){
             try {
                 serialPort.writeInt(184);
                 new Thread().sleep(100);
@@ -62,6 +62,17 @@ public class ArduinoController {
                 e.printStackTrace();
             }
             return "ARDUINO PARTS PER MILLION ="+ArduinoSerialPortSingleton.getPartsPerMillion();
+        } else if(cmd == 80) {
+            try {
+                serialPort.writeInt(185);
+                new Thread().sleep(100);
+                System.out.println("ArduinoSerialPortSingleton.getId():" + ArduinoSerialPortSingleton.getId());
+            } catch (SerialPortException ex) {
+                System.out.println(ex);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return "ARDUINO ID ="+ArduinoSerialPortSingleton.getId();
         }
         return "ARDUINO INCORRECT PIN_ID";
     }

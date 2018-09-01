@@ -6,11 +6,12 @@ import org.springframework.stereotype.Component;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 
 @Component("Arduino")
 public class ArduinoSerialPortSingleton {
     private static SerialPort instance;
-    private static short angle,partsPerMillion;
+    private static short angle,partsPerMillion,id;
 
     private ArduinoSerialPortSingleton(){
         String[] portNames = SerialPortList.getPortNames();
@@ -55,6 +56,9 @@ public class ArduinoSerialPortSingleton {
         return partsPerMillion;
     }
 
+    public static short getId() {
+        return id;
+    }
 
     static class SerialPortReader implements SerialPortEventListener {
 
@@ -65,25 +69,21 @@ public class ArduinoSerialPortSingleton {
                     //Read data, if 10 bytes available
                     try {
                         byte[] buffer = instance.readBytes(event.getEventValue());
-                        int i;
-                        for (i=0;i<buffer.length;i++){
-                            if(buffer[i]==13)
-                                break;
 
-                        }
+                        String word = new String(buffer, StandardCharsets.UTF_8);
 
-                        String word = new String(Arrays.copyOfRange(buffer,0,i), StandardCharsets.UTF_8);
+                        short commandId = Short.parseShort(word.substring(0, 2).trim());
 
-                        int outPin = Short.parseShort(word.substring(0, 1));
+                        Short value = Short.parseShort(word.substring(2, word.length()));
 
-                        Short value = Short.parseShort(word.substring(1, word.length()));
-
-                        System.out.println("outPin: "+outPin);
+                        System.out.println("commandId: "+commandId);
                         System.out.println("value: "+value);
-                        if(outPin==9)
+                        if(commandId==9)
                             ArduinoSerialPortSingleton.angle = value;
-                        if(outPin==8)
+                        if(commandId==8)
                             ArduinoSerialPortSingleton.partsPerMillion = value;
+                        if(commandId==80)
+                            ArduinoSerialPortSingleton.id = value;
 
                     } catch (SerialPortException ex) {
                         System.out.println(ex);
