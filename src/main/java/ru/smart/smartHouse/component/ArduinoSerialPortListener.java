@@ -67,7 +67,7 @@ public class ArduinoSerialPortListener implements SerialPortEventListener {
             System.out.println("ArduinoSerialPortListener.getPartsPerMillion():"+ partsPerMillion);
             return "ARDUINO PARTS PER MILLION ="+ partsPerMillion;
         } else if(cmd == 80) {
-            this.getSerialPort().writeInt(185);
+            this.getSerialPort().writeInt(48);
             new Thread().sleep(100);
             System.out.println("ArduinoSerialPortListener.getId():" + id);
             return "ARDUINO ID ="+ id;
