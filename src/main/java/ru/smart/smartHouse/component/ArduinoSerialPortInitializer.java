@@ -8,45 +8,47 @@ import ru.smart.smartHouse.service.ArduinoService;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class ArduinoSerialPortInitializer {
-    private List<ArduinoSerialPort> arduinoSerialPorts;
+    private List<ArduinoSerialPortListener> arduinoSerialPortListeners;
 
     private ArduinoService arduinoService;
 
     @Autowired
     public ArduinoSerialPortInitializer(ArduinoService arduinoService) {
         this.arduinoService = arduinoService;
-        arduinoSerialPorts = new ArrayList<>();
+        arduinoSerialPortListeners = new ArrayList<>();
 
         String[] portNames = SerialPortList.getPortNames();
         for(String port : portNames) {
             System.out.println("_ "+port);
-            ArduinoSerialPort arduinoSerialPort = new ArduinoSerialPort();
-            arduinoSerialPort.setSerialPort(new SerialPort(port));
+            ArduinoSerialPortListener arduinoSerialPortListener = new ArduinoSerialPortListener();
+            arduinoSerialPortListener.setSerialPort(new SerialPort(port));
 
             try {
                 //Открываем порт
-                arduinoSerialPort.getSerialPort().openPort();
-                arduinoSerialPort.getSerialPort().setParams(SerialPort.BAUDRATE_9600,
-                        SerialPort.DATABITS_8,
-                        SerialPort.STOPBITS_1,
-                        SerialPort.PARITY_NONE);
-                arduinoSerialPort.getSerialPort().addEventListener(arduinoSerialPort);//Add SerialPortEventListener
-                new Thread().sleep(1000);
+                arduinoSerialPortListener.getSerialPort().openPort();
+                if(arduinoSerialPortListener.getSerialPort().isOpened()) {
+                    arduinoSerialPortListener.getSerialPort().setParams(SerialPort.BAUDRATE_9600,
+                            SerialPort.DATABITS_8,
+                            SerialPort.STOPBITS_1,
+                            SerialPort.PARITY_NONE);
+                    arduinoSerialPortListener.getSerialPort().addEventListener(arduinoSerialPortListener);//Add SerialPortEventListener
+                    new Thread().sleep(5000);
 
-                arduinoSerialPort.getSerialPort().writeInt(185);
-                new Thread().sleep(3000);
+                    arduinoSerialPortListener.getSerialPort().writeInt(48);
+                    new Thread().sleep(3000);
 
-                Arduino arduino = this.arduinoService.findById(arduinoSerialPort.getId()).orElseThrow(Exception::new);
-                arduino.setPortName(arduinoSerialPort.getSerialPort().getPortName());
-                this.arduinoService.save(arduino);
+                    Arduino arduino = this.arduinoService.findById(arduinoSerialPortListener.getId()).orElseThrow(Exception::new);
+                    arduino.setPortName(arduinoSerialPortListener.getSerialPort().getPortName());
+                    this.arduinoService.save(arduino);
 
-                arduinoSerialPort.setArduino(arduino);
+                    arduinoSerialPortListener.setArduino(arduino);
 
-                arduinoSerialPorts.add(arduinoSerialPort);
+                    arduinoSerialPortListeners.add(arduinoSerialPortListener);
+
+                }
             } catch (SerialPortException ex) {
                 System.out.println(ex);
             } catch (InterruptedException e) {
@@ -57,15 +59,15 @@ public class ArduinoSerialPortInitializer {
         }
     }
 
-    public List<ArduinoSerialPort> getArduinoSerialPorts() {
-        return arduinoSerialPorts;
+    public List<ArduinoSerialPortListener> getArduinoSerialPortListeners() {
+        return arduinoSerialPortListeners;
     }
 
-    public void setArduinoSerialPorts(List<ArduinoSerialPort> arduinoSerialPorts) {
-        this.arduinoSerialPorts = arduinoSerialPorts;
+    public void setArduinoSerialPortListeners(List<ArduinoSerialPortListener> arduinoSerialPortListeners) {
+        this.arduinoSerialPortListeners = arduinoSerialPortListeners;
     }
 
-    public ArduinoSerialPort getArduinoSerialPort(Arduino arduino) throws Exception {
-        return  arduinoSerialPorts.stream().filter(port -> port.getArduino().getId().equals(arduino.getId())).findFirst().orElseThrow(Exception::new);
+    public ArduinoSerialPortListener getArduinoSerialPort(Arduino arduino) throws Exception {
+        return  arduinoSerialPortListeners.stream().filter(port -> port.getArduino().getId().equals(arduino.getId())).findFirst().orElseThrow(Exception::new);
     };
 }

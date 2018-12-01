@@ -7,7 +7,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
-import ru.smart.smartHouse.component.ArduinoSerialPort;
+import ru.smart.smartHouse.component.ArduinoSerialPortListener;
 import ru.smart.smartHouse.component.ArduinoSerialPortInitializer;
 import ru.smart.smartHouse.entity.Arduino;
 import ru.smart.smartHouse.service.ArduinoService;
@@ -47,8 +47,8 @@ public class ArduinoController {
     @ResponseBody
     public String read(@PathVariable("id") Arduino arduino, @PathVariable("cmd") long cmd) {
         try {
-            ArduinoSerialPort arduinoSerialPort = arduinoSerialPortInitializer.getArduinoSerialPort(arduino);
-            return arduinoSerialPort.execute(cmd);
+            ArduinoSerialPortListener arduinoSerialPortListener = arduinoSerialPortInitializer.getArduinoSerialPort(arduino);
+            return arduinoSerialPortListener.execute(cmd);
         }
         catch (SerialPortException ex) {
             System.out.println(ex);

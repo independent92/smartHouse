@@ -8,7 +8,7 @@ import ru.smart.smartHouse.entity.Arduino;
 
 import java.nio.charset.StandardCharsets;
 
-public class ArduinoSerialPort implements SerialPortEventListener {
+public class ArduinoSerialPortListener implements SerialPortEventListener {
     private Arduino arduino;
     private SerialPort serialPort;
     private long id, angle, partsPerMillion;
@@ -28,7 +28,7 @@ public class ArduinoSerialPort implements SerialPortEventListener {
         this.serialPort = serialPort;
     }
 
-    public ArduinoSerialPort() {
+    public ArduinoSerialPortListener() {
     }
 
     public long getId() {
@@ -59,17 +59,17 @@ public class ArduinoSerialPort implements SerialPortEventListener {
         if (cmd == 9) {
             this.getSerialPort().writeInt(183);
             new Thread().sleep(100);
-            System.out.println("ArduinoSerialPort.getAngle():" + angle);
+            System.out.println("ArduinoSerialPortListener.getAngle():" + angle);
             return "ARDUINO SERVO ANGLE=" + angle;
         }else if(cmd == 8){
             this.getSerialPort().writeInt(184);
             new Thread().sleep(100);
-            System.out.println("ArduinoSerialPort.getPartsPerMillion():"+ partsPerMillion);
+            System.out.println("ArduinoSerialPortListener.getPartsPerMillion():"+ partsPerMillion);
             return "ARDUINO PARTS PER MILLION ="+ partsPerMillion;
         } else if(cmd == 80) {
             this.getSerialPort().writeInt(185);
             new Thread().sleep(100);
-            System.out.println("ArduinoSerialPort.getId():" + id);
+            System.out.println("ArduinoSerialPortListener.getId():" + id);
             return "ARDUINO ID ="+ id;
         }
 
