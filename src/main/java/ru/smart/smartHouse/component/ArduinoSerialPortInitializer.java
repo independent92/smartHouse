@@ -6,24 +6,23 @@ import org.springframework.stereotype.Component;
 import ru.smart.smartHouse.entity.Arduino;
 import ru.smart.smartHouse.service.ArduinoService;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class ArduinoSerialPortInitializer {
-    private List<ArduinoSerialPortListener> arduinoSerialPortListeners;
-
-    private ArduinoService arduinoService;
+    private Map<Arduino, ArduinoSerialPortListener> arduinoSerialPortListeners;
+    private final ArduinoService arduinoService;
 
     @Autowired
     public ArduinoSerialPortInitializer(ArduinoService arduinoService) {
         this.arduinoService = arduinoService;
-        arduinoSerialPortListeners = new ArrayList<>();
+        arduinoSerialPortListeners = new HashMap<>();
 
         String[] portNames = SerialPortList.getPortNames();
         for(String port : portNames) {
-            System.out.println("_ "+port);
-            ArduinoSerialPortListener arduinoSerialPortListener = new ArduinoSerialPortListener();
+            System.out.println("Serial port: "+port);
+            ArduinoSerialPortListener arduinoSerialPortListener = new ArduinoSerialPortListener(this.arduinoService);
             arduinoSerialPortListener.setSerialPort(new SerialPort(port));
 
             try {
@@ -38,15 +37,7 @@ public class ArduinoSerialPortInitializer {
                     new Thread().sleep(5000);
 
                     arduinoSerialPortListener.getSerialPort().writeInt(48);
-                    new Thread().sleep(3000);
-
-                    Arduino arduino = this.arduinoService.findById(arduinoSerialPortListener.getId()).orElseThrow(Exception::new);
-                    arduino.setPortName(arduinoSerialPortListener.getSerialPort().getPortName());
-                    this.arduinoService.save(arduino);
-
-                    arduinoSerialPortListener.setArduino(arduino);
-
-                    arduinoSerialPortListeners.add(arduinoSerialPortListener);
+                    arduinoSerialPortListeners.put(arduinoSerialPortListener.getArduino(), arduinoSerialPortListener);
 
                 }
             } catch (SerialPortException ex) {
@@ -59,15 +50,7 @@ public class ArduinoSerialPortInitializer {
         }
     }
 
-    public List<ArduinoSerialPortListener> getArduinoSerialPortListeners() {
-        return arduinoSerialPortListeners;
-    }
-
-    public void setArduinoSerialPortListeners(List<ArduinoSerialPortListener> arduinoSerialPortListeners) {
-        this.arduinoSerialPortListeners = arduinoSerialPortListeners;
-    }
-
-    public ArduinoSerialPortListener getArduinoSerialPort(Arduino arduino) throws Exception {
-        return  arduinoSerialPortListeners.stream().filter(port -> port.getArduino().getId().equals(arduino.getId())).findFirst().orElseThrow(Exception::new);
+    public ArduinoSerialPortListener getArduinoSerialPortListener(Arduino arduino) throws Exception {
+        return  arduinoSerialPortListeners.get(arduino);
     };
 }

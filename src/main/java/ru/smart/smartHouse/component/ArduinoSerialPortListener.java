@@ -5,13 +5,20 @@ import jssc.SerialPortEvent;
 import jssc.SerialPortEventListener;
 import jssc.SerialPortException;
 import ru.smart.smartHouse.entity.Arduino;
+import ru.smart.smartHouse.service.ArduinoService;
 
 import java.nio.charset.StandardCharsets;
 
 public class ArduinoSerialPortListener implements SerialPortEventListener {
     private Arduino arduino;
     private SerialPort serialPort;
-    private long id, angle, partsPerMillion;
+    private long angle, partsPerMillion;
+
+    private ArduinoService arduinoService;
+
+    public ArduinoSerialPortListener(ArduinoService arduinoService) {
+        this.arduinoService = arduinoService;
+    }
 
     public void setArduino(Arduino arduino) {
         this.arduino = arduino;
@@ -26,17 +33,6 @@ public class ArduinoSerialPortListener implements SerialPortEventListener {
 
     public void setSerialPort(SerialPort serialPort) {
         this.serialPort = serialPort;
-    }
-
-    public ArduinoSerialPortListener() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
 
     public long getAngle() {
@@ -55,25 +51,8 @@ public class ArduinoSerialPortListener implements SerialPortEventListener {
         this.partsPerMillion = partsPerMillion;
     }
 
-    public String execute(long cmd) throws Exception {
-        if (cmd == 9) {
-            this.getSerialPort().writeInt(183);
-            new Thread().sleep(100);
-            System.out.println("ArduinoSerialPortListener.getAngle():" + angle);
-            return "ARDUINO SERVO ANGLE=" + angle;
-        }else if(cmd == 8){
-            this.getSerialPort().writeInt(184);
-            new Thread().sleep(100);
-            System.out.println("ArduinoSerialPortListener.getPartsPerMillion():"+ partsPerMillion);
-            return "ARDUINO PARTS PER MILLION ="+ partsPerMillion;
-        } else if(cmd == 80) {
-            this.getSerialPort().writeInt(48);
-            new Thread().sleep(100);
-            System.out.println("ArduinoSerialPortListener.getId():" + id);
-            return "ARDUINO ID ="+ id;
-        }
-
-        throw new Exception("incorrect cmd");
+    public boolean execute(int cmd) throws Exception {
+        return this.getSerialPort().writeInt(cmd);
     }
 
     public void serialEvent(SerialPortEvent event){
@@ -97,7 +76,9 @@ public class ArduinoSerialPortListener implements SerialPortEventListener {
                     if(commandId==8)
                         partsPerMillion = value;
                     if(commandId==80) {
-                        id = value;
+                        arduino = arduinoService.findById(Long.valueOf(value)).orElseThrow(Exception::new);
+                        arduino.setPortName(serialPort.getPortName());
+                        arduinoService.save(arduino);
                     }
 
                 } catch (SerialPortException ex) {
