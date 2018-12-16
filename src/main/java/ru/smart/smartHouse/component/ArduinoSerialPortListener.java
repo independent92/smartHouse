@@ -8,11 +8,15 @@ import ru.smart.smartHouse.entity.Arduino;
 import ru.smart.smartHouse.service.ArduinoService;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
 
 public class ArduinoSerialPortListener implements SerialPortEventListener {
     private Arduino arduino;
     private SerialPort serialPort;
     private long angle, partsPerMillion;
+    public Map<Integer, ScheduledFuture<?>> schedules = new HashMap<>();
 
     private ArduinoService arduinoService;
 
@@ -51,8 +55,13 @@ public class ArduinoSerialPortListener implements SerialPortEventListener {
         this.partsPerMillion = partsPerMillion;
     }
 
-    public boolean execute(int cmd) throws Exception {
-        return this.getSerialPort().writeInt(cmd);
+    public boolean execute(int cmd){
+        try {
+            return this.getSerialPort().writeInt(cmd);
+        } catch (SerialPortException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public void serialEvent(SerialPortEvent event){
@@ -101,5 +110,4 @@ public class ArduinoSerialPortListener implements SerialPortEventListener {
             }
         }
     }
-
 }

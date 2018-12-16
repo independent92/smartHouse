@@ -9,8 +9,12 @@ import java.util.Optional;
 
 @Service
 public class ArduinoService {
+    private final ArduinoRepository repository;
+
     @Autowired
-    ArduinoRepository repository;
+    public ArduinoService(ArduinoRepository repository) {
+        this.repository = repository;
+    }
 
     public Optional<Arduino> findById(Long id) {
         return repository.findById(id);
