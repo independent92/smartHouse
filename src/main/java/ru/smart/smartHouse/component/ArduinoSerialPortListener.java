@@ -5,7 +5,6 @@ import jssc.SerialPortEvent;
 import jssc.SerialPortEventListener;
 import jssc.SerialPortException;
 import ru.smart.smartHouse.entity.Arduino;
-import ru.smart.smartHouse.service.ArduinoService;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -13,24 +12,29 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
 public class ArduinoSerialPortListener implements SerialPortEventListener {
-    private Arduino arduino;
+    private Long arduinoId;
     private SerialPort serialPort;
     private long angle, partsPerMillion;
+
+    private Arduino arduino;
     public Map<Integer, ScheduledFuture<?>> schedules = new HashMap<>();
 
-    private ArduinoService arduinoService;
+    public Long getArduinoId() {
+        return arduinoId;
+    }
 
-    public ArduinoSerialPortListener(ArduinoService arduinoService) {
-        this.arduinoService = arduinoService;
+    public void setArduinoId(Long arduinoId) {
+        this.arduinoId = arduinoId;
+    }
+
+    public Arduino getArduino() {
+        return arduino;
     }
 
     public void setArduino(Arduino arduino) {
         this.arduino = arduino;
     }
 
-    public Arduino getArduino() {
-        return arduino;
-    }
     public SerialPort getSerialPort() {
         return serialPort;
     }
@@ -85,9 +89,7 @@ public class ArduinoSerialPortListener implements SerialPortEventListener {
                     if(commandId==8)
                         partsPerMillion = value;
                     if(commandId==80) {
-                        arduino = arduinoService.findById(Long.valueOf(value)).orElseThrow(Exception::new);
-                        arduino.setPortName(serialPort.getPortName());
-                        arduinoService.save(arduino);
+                        arduinoId = Long.valueOf(value);
                     }
 
                 } catch (SerialPortException ex) {

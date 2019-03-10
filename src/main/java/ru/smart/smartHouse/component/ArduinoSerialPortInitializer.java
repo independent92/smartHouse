@@ -1,7 +1,6 @@
 package ru.smart.smartHouse.component;
 
 import jssc.SerialPort;
-import jssc.SerialPortException;
 import jssc.SerialPortList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -11,9 +10,12 @@ import ru.smart.smartHouse.service.ArduinoService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
+// TODO: as singleton
 @Component
 public class ArduinoSerialPortInitializer {
+    // TODO: as Set
     private List<ArduinoSerialPortListener> arduinoSerialPortListeners = new ArrayList<>();
     private final ArduinoService arduinoService;
 
@@ -23,30 +25,32 @@ public class ArduinoSerialPortInitializer {
 
         String[] portNames = SerialPortList.getPortNames();
         for(String port : portNames) {
-            System.out.println("Serial port: "+port);
-            ArduinoSerialPortListener arduinoSerialPortListener = new ArduinoSerialPortListener(this.arduinoService);
-            arduinoSerialPortListener.setSerialPort(new SerialPort(port));
+            System.out.println(String.format("Serial port: %s", port));
+            ArduinoSerialPortListener arduinoSerialPortListener = new ArduinoSerialPortListener();
 
-            SerialPort serialPort = arduinoSerialPortListener.getSerialPort();
+            SerialPort serialPort = new SerialPort(port);
+            arduinoSerialPortListener.setSerialPort(serialPort);
+
             try {
                 //Открываем порт
                 serialPort.openPort();
-                if(serialPort.isOpened()) {
-                    serialPort.setParams(SerialPort.BAUDRATE_9600,
-                            SerialPort.DATABITS_8,
-                            SerialPort.STOPBITS_1,
-                            SerialPort.PARITY_NONE);
-                    serialPort.addEventListener(arduinoSerialPortListener);//Add SerialPortEventListener
-                    new Thread().sleep(5000);
+                serialPort.setParams(SerialPort.BAUDRATE_9600,
+                        SerialPort.DATABITS_8,
+                        SerialPort.STOPBITS_1,
+                        SerialPort.PARITY_NONE);
+                new Thread().sleep(5000);
 
-                    serialPort.writeInt(48);
-                    new Thread().sleep(1000);
-                    arduinoSerialPortListeners.add(arduinoSerialPortListener);
-                }
-            } catch (SerialPortException ex) {
-                System.out.println(ex);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                serialPort.addEventListener(arduinoSerialPortListener);
+                serialPort.writeInt(48);
+                new Thread().sleep(1000);
+
+                Arduino arduino = arduinoService.findById(arduinoSerialPortListener.getArduinoId()).orElseThrow(Exception::new);
+                arduino.setPortName(serialPort.getPortName());
+                arduinoSerialPortListener.setArduino(arduino);
+
+                arduinoService.save(arduino);
+
+                arduinoSerialPortListeners.add(arduinoSerialPortListener);
             } catch (Exception e) {
                 e.printStackTrace();
             }

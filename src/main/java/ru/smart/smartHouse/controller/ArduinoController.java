@@ -1,9 +1,9 @@
 package ru.smart.smartHouse.controller;
 
-import jssc.SerialPortException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -13,6 +13,7 @@ import ru.smart.smartHouse.component.ArduinoSerialPortInitializer;
 import ru.smart.smartHouse.component.ArduinoSerialPortListener;
 import ru.smart.smartHouse.entity.Arduino;
 import ru.smart.smartHouse.service.ArduinoService;
+import ru.smart.smartHouse.service.ArduinoTaskService;
 
 import java.util.concurrent.ScheduledFuture;
 
@@ -25,15 +26,15 @@ public class ArduinoController {
 
     private final ArduinoSerialPortInitializer arduinoSerialPortInitializer;
     private final ArduinoService arduinoService;
-    private final TaskScheduler taskScheduler;
+    private final ArduinoTaskService arduinoTaskService;
 
     @Autowired
     public ArduinoController(ArduinoSerialPortInitializer arduinoSerialPortInitializer,
                              ArduinoService arduinoService,
-                             TaskScheduler taskScheduler) {
+                             ArduinoTaskService arduinoTaskService) {
         this.arduinoSerialPortInitializer = arduinoSerialPortInitializer;
         this.arduinoService = arduinoService;
-        this.taskScheduler = taskScheduler;
+        this.arduinoTaskService = arduinoTaskService;
     }
 
     @RequestMapping(value = "/edit/{id}", method = RequestMethod.GET)
@@ -64,47 +65,25 @@ public class ArduinoController {
     }
 
     @RequestMapping(value = "/start/{id}/execute/{cmd}", method = RequestMethod.GET)
-    public String start(@PathVariable("id") Arduino arduino, @PathVariable("cmd") int cmd) {
-        try {
-            ArduinoSerialPortListener arduinoSerialPortListener = arduinoSerialPortInitializer.getArduinoSerialPortListener(arduino);
-            if(isNull(arduinoSerialPortListener.schedules.get(cmd))) {
-                ScheduledFuture<?> task = taskScheduler.schedule(() -> arduinoSerialPortListener.execute(cmd), new CronTrigger("0/10 * * * * *"));
-                arduinoSerialPortListener.schedules.put(cmd, task);
-            }
-        }
-        catch (SerialPortException ex) {
-            System.out.println(ex);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "start";
+    public ResponseEntity<?> start(@PathVariable("id") Arduino arduino,
+                        @PathVariable("cmd") int cmd,
+                        @RequestParam String expression) {
+        arduinoTaskService.addTask(arduino, cmd, expression);
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @RequestMapping(value = "/stop/{id}/execute/{cmd}", method = RequestMethod.GET)
-    public String stop(@PathVariable("id") Arduino arduino, @PathVariable("cmd") int cmd) {
-        try {
-            ArduinoSerialPortListener arduinoSerialPortListener = arduinoSerialPortInitializer.getArduinoSerialPortListener(arduino);
-            ScheduledFuture<?> task = arduinoSerialPortListener.schedules.get(cmd);
-            if(!isNull(task)) {
-                task.cancel(false);
-                arduinoSerialPortListener.schedules.remove(cmd);
-            }
-        }
-            catch (SerialPortException ex) {
-            System.out.println(ex);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "stop";
+    public ResponseEntity<?> stop(@PathVariable("id") Arduino arduino, @PathVariable("cmd") int cmd) {
+        arduinoTaskService.removeTask(arduino, cmd);
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     private String execute(Arduino arduino, int cmd) {
         try {
             ArduinoSerialPortListener arduinoSerialPortListener = arduinoSerialPortInitializer.getArduinoSerialPortListener(arduino);
             return String.format("Result of writing command №%d to %s is %b", cmd, arduino.getDescription(), arduinoSerialPortListener.execute(cmd));
-        }
-        catch (SerialPortException ex) {
-            System.out.println(ex);
         } catch (Exception e) {
             e.printStackTrace();
         }
