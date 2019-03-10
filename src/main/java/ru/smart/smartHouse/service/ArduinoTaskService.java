@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import ru.smart.smartHouse.component.ArduinoSerialPortInitializer;
 import ru.smart.smartHouse.component.ArduinoSerialPortListener;
 import ru.smart.smartHouse.entity.Arduino;
-
+// TODO  listener's mao to set
 @Service
 public class ArduinoTaskService {
 
